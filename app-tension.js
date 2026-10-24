@@ -63,6 +63,7 @@ const gameData = [
 
 let players = [];
 let scores = [];
+let nameDrafts = [];
 let selectedPlayerCount = 2;
 const usedClues = new Set();
 const clueLimit = 20;
@@ -85,6 +86,7 @@ let boardChooser = 0;
 let buzzersOpen = false;
 let buzzedPlayer = null;
 const lockedOutPlayers = new Set();
+let undoRuling = null;
 let previousTile = null;
 let soundEnabled = true;
 
@@ -108,6 +110,13 @@ function updateSoundToggle() {
 }
 
 const money = (amount) => `$${amount.toLocaleString("en-US")}`;
+const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[character]));
 
 function renderScores() {
   scoreStrip.style.display = "grid";
@@ -115,7 +124,7 @@ function renderScores() {
   scoreStrip.innerHTML = players.map((player, index) => `
     <div class="score-card">
       <div class="score-person">
-        <span class="score-name">${player}</span>
+        <span class="score-name">${escapeHTML(player)}</span>
         <strong class="score-value">${money(scores[index])}</strong>
       </div>
     </div>
@@ -131,6 +140,7 @@ function renderSetup() {
   buzzersOpen = false;
   buzzedPlayer = null;
   lockedOutPlayers.clear();
+  undoRuling = null;
   scoreStrip.innerHTML = "";
   scoreStrip.style.display = "none";
   newGameButton.hidden = true;
@@ -149,7 +159,7 @@ function renderSetup() {
             </button>
           `).join("")}
         </div>
-        <button class="primary-action start-round" type="button">Start Round</button>
+        <button class="primary-action continue-setup" type="button">Continue</button>
       </div>
     </section>
   `;
@@ -165,11 +175,57 @@ function renderSetup() {
     });
   });
 
-  stage.querySelector(".start-round").addEventListener("click", () => {
-    players = Array.from({ length: selectedPlayerCount }, (_, index) => `Player ${index + 1}`);
+  stage.querySelector(".continue-setup").addEventListener("click", () => {
+    if (nameDrafts.length !== selectedPlayerCount) {
+      nameDrafts = Array.from({ length: selectedPlayerCount }, (_, index) => players[index] || `Player ${index + 1}`);
+    }
+    renderPlayerNames();
+  });
+}
+
+function renderPlayerNames() {
+  scoreStrip.innerHTML = "";
+  scoreStrip.style.display = "none";
+  newGameButton.hidden = true;
+
+  stage.innerHTML = `
+    <section class="setup-screen name-setup-screen" aria-labelledby="names-title">
+      <div class="setup-card name-setup-card">
+        <p class="setup-kicker">PLAYER SETUP</p>
+        <h1 id="names-title">Enter player names</h1>
+        <p class="setup-copy">These names appear on the score board. The key beside each name is that player's buzzer.</p>
+        <div class="player-name-list">
+          ${nameDrafts.map((name, index) => `
+            <div class="player-name-row">
+              <div class="player-name-key"><kbd>${buzzerKeys[selectedPlayerCount][index]}</kbd><span>Player ${index + 1}</span></div>
+              <label class="player-name-field" for="player-name-${index}">
+                <span>Name</span>
+                <input id="player-name-${index}" type="text" maxlength="24" autocomplete="off" value="${escapeHTML(name)}" aria-label="Name for player ${index + 1}" />
+              </label>
+            </div>
+          `).join("")}
+        </div>
+        <div class="name-setup-actions">
+          <button class="secondary-action back-to-count" type="button">Back</button>
+          <button class="primary-action start-game" type="button">Start Game</button>
+        </div>
+      </div>
+    </section>
+  `;
+
+  stage.querySelector(".back-to-count").addEventListener("click", () => {
+    nameDrafts = nameDrafts.map((_, index) => stage.querySelector(`#player-name-${index}`).value);
+    renderSetup();
+  });
+  stage.querySelector(".start-game").addEventListener("click", () => {
+    players = nameDrafts.map((_, index) => {
+      const enteredName = stage.querySelector(`#player-name-${index}`).value.trim();
+      return enteredName || `Player ${index + 1}`;
+    });
     scores = Array(players.length).fill(0);
     usedClues.clear();
     boardChooser = 0;
+    undoRuling = null;
     newGameButton.hidden = false;
     renderBoard();
   });
@@ -181,6 +237,7 @@ function renderBoard() {
   activeClue = null;
   answerRevealed = false;
   scoredFor = null;
+  undoRuling = null;
   renderScores();
 
   if (usedClues.size >= clueLimit) {
@@ -190,7 +247,7 @@ function renderBoard() {
 
   stage.innerHTML = `
     <div class="stage-heading">
-      <h1>${players[boardChooser].toUpperCase()}, CHOOSE A CLUE</h1>
+      <h1>${escapeHTML(players[boardChooser].toUpperCase())}, CHOOSE A CLUE</h1>
       <p>${clueLimit - usedClues.size} clues until final scores</p>
     </div>
     <section class="board" aria-label="Round one clue board">
@@ -223,6 +280,7 @@ function renderBoard() {
       buzzersOpen = false;
       buzzedPlayer = null;
       lockedOutPlayers.clear();
+      undoRuling = null;
       startClueAudio();
       renderClue();
     });
@@ -241,10 +299,10 @@ function renderFinalScores() {
       <div class="final-card">
         <p class="setup-kicker">${usedClues.size} CLUES PLAYED</p>
         <h1 id="final-title">Game complete</h1>
-        <p class="final-winner">${winners.length === 1 ? `${winners[0]} wins` : `${winners.join(" and ")} tie for the win`}</p>
+        <p class="final-winner">${winners.length === 1 ? `${escapeHTML(winners[0])} wins` : `${winners.map(escapeHTML).join(" and ")} tie for the win`}</p>
         <ol class="final-standings" aria-label="Final scores">
           ${standings.map(({ player, score }, index) => `
-            <li><span><span class="final-rank">${index + 1}</span>${player}</span><strong>${money(score)}</strong></li>
+            <li><span><span class="final-rank">${index + 1}</span>${escapeHTML(player)}</span><strong>${money(score)}</strong></li>
           `).join("")}
         </ol>
       </div>
@@ -252,13 +310,55 @@ function renderFinalScores() {
   `;
 }
 
+function saveUndoRuling(description) {
+  undoRuling = {
+    description,
+    scores: [...scores],
+    lockedOutPlayers: [...lockedOutPlayers],
+    buzzersOpen,
+    buzzedPlayer,
+    correctPlayer,
+    scoredFor,
+    boardChooser,
+    answerRevealed,
+    clueWasUsed: usedClues.has(activeClue.id),
+  };
+}
+
+function undoLastRuling() {
+  if (!undoRuling || !activeClue) return;
+  const previousState = undoRuling;
+  scores = [...previousState.scores];
+  lockedOutPlayers.clear();
+  previousState.lockedOutPlayers.forEach((index) => lockedOutPlayers.add(index));
+  buzzersOpen = previousState.buzzersOpen;
+  buzzedPlayer = previousState.buzzedPlayer;
+  correctPlayer = previousState.correctPlayer;
+  scoredFor = previousState.scoredFor;
+  boardChooser = previousState.boardChooser;
+  answerRevealed = previousState.answerRevealed;
+  if (previousState.clueWasUsed) usedClues.add(activeClue.id);
+  else usedClues.delete(activeClue.id);
+  undoRuling = null;
+  renderScores();
+  if (!answerRevealed && soundEnabled) startClueAudio();
+  else stopClueAudio();
+  renderClue();
+  const focusSelector = buzzedPlayer !== null
+    ? ".correct-response"
+    : !buzzersOpen
+      ? ".open-buzzers"
+      : ".reveal-answer-button";
+  stage.querySelector(focusSelector)?.focus();
+}
+
 function renderClue() {
   renderScores();
   const keyboardLegend = `
     <div class="keyboard-buzzers" aria-label="Player buzzer keys">
       ${players.map((player, index) => `
-        <div class="keyboard-buzzer${lockedOutPlayers.has(index) ? " locked-out" : ""}"${lockedOutPlayers.has(index) ? ' aria-label="' + player + ', locked out for this clue"' : ""}>
-          <kbd>${buzzerKeys[players.length][index]}</kbd><span>${player}</span>
+        <div class="keyboard-buzzer${lockedOutPlayers.has(index) ? " locked-out" : ""}"${lockedOutPlayers.has(index) ? ` aria-label="${escapeHTML(player)}, locked out for this clue"` : ""}>
+          <kbd>${buzzerKeys[players.length][index]}</kbd><span>${escapeHTML(player)}</span>
           ${lockedOutPlayers.has(index) ? `<small>Locked out</small>` : ""}
         </div>
       `).join("")}
@@ -267,7 +367,7 @@ function renderClue() {
   const buzzerControls = !answerRevealed
     ? buzzedPlayer !== null
       ? `
-        <p class="buzzer-status">${players[buzzedPlayer]} buzzed in with ${buzzerKeys[players.length][buzzedPlayer]}. Did they get it?</p>
+        <p class="buzzer-status">${escapeHTML(players[buzzedPlayer])} buzzed in with ${buzzerKeys[players.length][buzzedPlayer]}. Did they get it?</p>
         ${keyboardLegend}
         <div class="host-rulings">
           <button class="ruling-button correct-response" type="button">Correct</button>
@@ -296,8 +396,14 @@ function renderClue() {
         <p class="answer-text" ${answerRevealed ? "" : "hidden"}>${activeClue.response}</p>
         ${!answerRevealed ? `<section class="buzzer-controls" aria-live="polite">${buzzerControls}</section>` : correctPlayer !== null ? `
           <section class="score-decision" aria-live="polite">
-            <p class="score-confirmation">${players[correctPlayer]} earned ${money(activeClue.value)}.</p>
+            <p class="score-confirmation">${escapeHTML(players[correctPlayer])} earned ${money(activeClue.value)}.</p>
           </section>
+        ` : ""}
+        ${undoRuling ? `
+          <div class="undo-ruling" role="status">
+            <span>${escapeHTML(undoRuling.description)}</span>
+            <button class="undo-ruling-button" type="button">Undo last ruling</button>
+          </div>
         ` : ""}
         ${answerRevealed ? `<button class="primary-action" type="button">Continue</button>` : ""}
       </div>
@@ -305,6 +411,7 @@ function renderClue() {
   `;
 
   stage.querySelector(".close-clue").addEventListener("click", closeClue);
+  stage.querySelector(".undo-ruling-button")?.addEventListener("click", undoLastRuling);
   stage.querySelector(".open-buzzers")?.addEventListener("click", () => {
     buzzersOpen = true;
     renderClue();
@@ -312,7 +419,9 @@ function renderClue() {
   });
   stage.querySelector(".correct-response")?.addEventListener("click", () => {
     if (buzzedPlayer === null) return;
-    correctPlayer = buzzedPlayer;
+    const correctResponder = buzzedPlayer;
+    saveUndoRuling(`${players[correctResponder]} was marked correct · ${money(activeClue.value)} awarded`);
+    correctPlayer = correctResponder;
     boardChooser = correctPlayer;
     scoredFor = correctPlayer;
     scores[correctPlayer] += activeClue.value;
@@ -327,6 +436,7 @@ function renderClue() {
   stage.querySelector(".incorrect-response")?.addEventListener("click", () => {
     if (buzzedPlayer === null) return;
     const incorrectPlayer = buzzedPlayer;
+    saveUndoRuling(`${players[incorrectPlayer]} was marked incorrect · ${money(activeClue.value)} deducted`);
     scores[incorrectPlayer] -= activeClue.value;
     lockedOutPlayers.add(incorrectPlayer);
     buzzedPlayer = null;
@@ -350,7 +460,8 @@ function renderClue() {
 
 function closeClue() {
   stopClueAudio();
-  if (correctPlayer !== null || answerRevealed) usedClues.add(activeClue.id);
+  if (correctPlayer !== null || answerRevealed || lockedOutPlayers.size > 0) usedClues.add(activeClue.id);
+  undoRuling = null;
   renderBoard();
   previousTile?.focus();
 }
