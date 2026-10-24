@@ -124,13 +124,13 @@ function renderSetup() {
     <section class="setup-screen" aria-labelledby="setup-title">
       <div class="setup-card">
         <p class="setup-kicker">ROUND ONE</p>
-        <h1 id="setup-title">How many teams are playing?</h1>
-        <p class="setup-copy">Choose between two and four teams to set up the score board.</p>
-        <div class="player-count-options" role="group" aria-label="Number of teams">
+        <h1 id="setup-title">How many players are playing?</h1>
+        <p class="setup-copy">Choose between two and four players to set up the score board.</p>
+        <div class="player-count-options" role="group" aria-label="Number of players">
           ${[2, 3, 4].map((count) => `
             <button class="player-count-option${count === selectedPlayerCount ? " selected" : ""}" type="button" data-player-count="${count}" aria-pressed="${count === selectedPlayerCount}">
               <strong>${count}</strong>
-              <span>${count === 1 ? "team" : "teams"}</span>
+              <span>${count === 1 ? "player" : "players"}</span>
             </button>
           `).join("")}
         </div>
@@ -151,7 +151,7 @@ function renderSetup() {
   });
 
   stage.querySelector(".start-round").addEventListener("click", () => {
-    players = Array.from({ length: selectedPlayerCount }, (_, index) => `Team ${index + 1}`);
+    players = Array.from({ length: selectedPlayerCount }, (_, index) => `Player ${index + 1}`);
     scores = Array(players.length).fill(0);
     usedClues.clear();
     newGameButton.hidden = false;
