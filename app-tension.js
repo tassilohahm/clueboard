@@ -294,11 +294,11 @@ function renderClue() {
         <p class="clue-meta">${activeClue.category} <span aria-hidden="true">·</span> ${money(activeClue.value)}</p>
         <p class="clue-text">${activeClue.clue}</p>
         <p class="answer-text" ${answerRevealed ? "" : "hidden"}>${activeClue.response}</p>
-        ${!answerRevealed ? `<section class="buzzer-controls" aria-live="polite">${buzzerControls}</section>` : `
+        ${!answerRevealed ? `<section class="buzzer-controls" aria-live="polite">${buzzerControls}</section>` : correctPlayer !== null ? `
           <section class="score-decision" aria-live="polite">
-            ${correctPlayer !== null ? `<p class="score-confirmation">${players[correctPlayer]} earned ${money(activeClue.value)}.</p>` : `<p class="score-help">No points awarded for this clue.</p>`}
+            <p class="score-confirmation">${players[correctPlayer]} earned ${money(activeClue.value)}.</p>
           </section>
-        `}
+        ` : ""}
         ${answerRevealed ? `<button class="primary-action" type="button">Continue</button>` : ""}
       </div>
     </section>
