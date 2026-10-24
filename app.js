@@ -70,6 +70,7 @@ const newGameButton = document.querySelector("#new-game");
 
 let activeClue = null;
 let answerRevealed = false;
+let scoredFor = null;
 let previousTile = null;
 
 const money = (amount) => `$${amount.toLocaleString("en-US")}`;
@@ -81,26 +82,14 @@ function renderScores() {
         <span class="score-name">${player}</span>
         <strong class="score-value">${money(scores[index])}</strong>
       </div>
-      <div class="score-adjustments" ${activeClue ? "" : "hidden"} aria-label="Adjust ${player} by ${money(activeClue?.value ?? 0)}">
-        <button class="score-adjust" type="button" data-player="${index}" data-delta="-1" aria-label="Subtract ${money(activeClue?.value ?? 0)} from ${player}">−${money(activeClue?.value ?? 0)}</button>
-        <button class="score-adjust" type="button" data-player="${index}" data-delta="1" aria-label="Add ${money(activeClue?.value ?? 0)} to ${player}">+${money(activeClue?.value ?? 0)}</button>
-      </div>
     </div>
   `).join("");
-
-  scoreStrip.querySelectorAll(".score-adjust").forEach((button) => {
-    button.addEventListener("click", () => {
-      const playerIndex = Number(button.dataset.player);
-      const direction = Number(button.dataset.delta);
-      scores[playerIndex] += direction * activeClue.value;
-      renderScores();
-    });
-  });
 }
 
 function renderBoard() {
   activeClue = null;
   answerRevealed = false;
+  scoredFor = null;
   renderScores();
 
   const allPlayed = usedClues.size === gameData.length * 5;
@@ -143,6 +132,7 @@ function renderBoard() {
         category: gameData[categoryIndex].category,
         id: tile.dataset.clue,
       };
+      scoredFor = null;
       renderClue();
     });
   });
@@ -157,12 +147,34 @@ function renderClue() {
         <p class="clue-meta">${activeClue.category} <span aria-hidden="true">·</span> ${money(activeClue.value)}</p>
         <p class="clue-text">${activeClue.clue}</p>
         <p class="answer-text" ${answerRevealed ? "" : "hidden"}>${activeClue.response}</p>
+        ${answerRevealed ? `
+          <section class="score-decision" aria-live="polite">
+            ${scoredFor === null ? `
+              <p class="score-question">Who got it?</p>
+              <div class="score-awards">
+                ${players.map((player, index) => `<button class="score-award" type="button" data-player="${index}">Award ${money(activeClue.value)} to ${player}</button>`).join("")}
+              </div>
+              <p class="score-help">If no one got it, continue without awarding points.</p>
+            ` : `<p class="score-confirmation">${players[scoredFor]} earned ${money(activeClue.value)}.</p>`}
+          </section>
+        ` : ""}
         <button class="primary-action" type="button">${answerRevealed ? "Continue" : "Show Answer"}</button>
       </div>
     </section>
   `;
 
   stage.querySelector(".close-clue").addEventListener("click", closeClue);
+  stage.querySelectorAll(".score-award").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (scoredFor !== null) return;
+      scoredFor = Number(button.dataset.player);
+      scores[scoredFor] += activeClue.value;
+      usedClues.add(activeClue.id);
+      renderScores();
+      renderClue();
+      stage.querySelector(".primary-action").focus();
+    });
+  });
   stage.querySelector(".primary-action").addEventListener("click", () => {
     if (!answerRevealed) {
       answerRevealed = true;
@@ -177,6 +189,7 @@ function renderClue() {
 }
 
 function closeClue() {
+  if (scoredFor !== null) usedClues.add(activeClue.id);
   renderBoard();
   previousTile?.focus();
 }
