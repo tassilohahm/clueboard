@@ -9,13 +9,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=score-once-2" />
+    <link rel="stylesheet" href="styles.css?v=clock-loop-1" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <a class="brand" href="#" aria-label="Clueboard home">CLUE<span>BOARD</span></a>
         <div class="round-label"><span class="round-dot"></span> ROUND ONE</div>
+        <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true" title="Turn clue sound off">♫ Sound on</button>
         <button class="new-game-button" id="new-game" type="button">New game</button>
       </header>
 
@@ -23,6 +24,7 @@
       <main id="game-stage" tabindex="-1"></main>
       <footer class="footer-note">HOST-LED TRIVIA · FIRST ROUND</footer>
     </div>
-    <script src="app.js?v=score-once-2" defer></script>
+    <audio id="thinking-audio" src="assets/ticking-clock.mp3" preload="auto" loop></audio>
+    <script src="app.js?v=clock-loop-1" defer></script>
   </body>
 </html>

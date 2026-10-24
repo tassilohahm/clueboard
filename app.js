@@ -67,11 +67,33 @@ const usedClues = new Set();
 const scoreStrip = document.querySelector("#score-strip");
 const stage = document.querySelector("#game-stage");
 const newGameButton = document.querySelector("#new-game");
+const soundToggle = document.querySelector("#sound-toggle");
+const thinkingAudio = document.querySelector("#thinking-audio");
 
 let activeClue = null;
 let answerRevealed = false;
 let scoredFor = null;
 let previousTile = null;
+let soundEnabled = true;
+
+thinkingAudio.volume = 0.22;
+
+function playThinkingSound() {
+  if (!soundEnabled) return;
+  thinkingAudio.currentTime = 0;
+  thinkingAudio.play().catch(() => {});
+}
+
+function stopThinkingSound() {
+  thinkingAudio.pause();
+  thinkingAudio.currentTime = 0;
+}
+
+function updateSoundToggle() {
+  soundToggle.setAttribute("aria-pressed", String(soundEnabled));
+  soundToggle.textContent = soundEnabled ? "♫ Sound on" : "♫ Sound off";
+  soundToggle.title = soundEnabled ? "Turn clue sound off" : "Turn clue sound on";
+}
 
 const money = (amount) => `$${amount.toLocaleString("en-US")}`;
 
@@ -87,6 +109,7 @@ function renderScores() {
 }
 
 function renderBoard() {
+  stopThinkingSound();
   activeClue = null;
   answerRevealed = false;
   scoredFor = null;
@@ -133,6 +156,7 @@ function renderBoard() {
         id: tile.dataset.clue,
       };
       scoredFor = null;
+      playThinkingSound();
       renderClue();
     });
   });
@@ -177,6 +201,7 @@ function renderClue() {
   });
   stage.querySelector(".primary-action").addEventListener("click", () => {
     if (!answerRevealed) {
+      stopThinkingSound();
       answerRevealed = true;
       renderClue();
       stage.querySelector(".primary-action").focus();
@@ -189,10 +214,18 @@ function renderClue() {
 }
 
 function closeClue() {
+  stopThinkingSound();
   if (scoredFor !== null) usedClues.add(activeClue.id);
   renderBoard();
   previousTile?.focus();
 }
+
+soundToggle.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  updateSoundToggle();
+  if (activeClue && !answerRevealed && soundEnabled) playThinkingSound();
+  else stopThinkingSound();
+});
 
 newGameButton.addEventListener("click", () => {
   if (!window.confirm("Start a new round? Scores and used clues will reset.")) return;
@@ -206,3 +239,4 @@ window.addEventListener("keydown", (event) => {
 });
 
 renderBoard();
+updateSoundToggle();
