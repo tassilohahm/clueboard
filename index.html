@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06145b" />
+    <meta name="description" content="A host-led, Jeopardy-style trivia board." />
+    <title>Clueboard — Round One</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Clueboard home">CLUE<span>BOARD</span></a>
+        <div class="round-label"><span class="round-dot"></span> ROUND ONE</div>
+        <button class="new-game-button" id="new-game" type="button">New game</button>
+      </header>
+
+      <section class="score-strip" id="score-strip" aria-label="Player scores" aria-live="polite"></section>
+      <main id="game-stage" tabindex="-1"></main>
+      <footer class="footer-note">HOST-LED TRIVIA · FIRST ROUND</footer>
+    </div>
+    <script src="app.js" defer></script>
+  </body>
+</html>
