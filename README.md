@@ -10,8 +10,8 @@ Open `index.html` in a modern browser. There is no build step, server, account, 
 
 1. Choose a category and value.
 2. The host reads the clue and judges responses externally.
-3. Use the score controls to add or subtract the selected clue's value for a team.
-4. Reveal the response, then choose **Continue** to mark the clue played and return to the board.
+3. Reveal the response. If one team got it, award the clue value to that team once.
+4. Choose **Continue** to mark the clue played and return to the board. If no team got it, continue without awarding points.
 5. Use the small **×** (or Escape) to close a mistakenly opened clue without marking it played.
 
 The score and board state live in memory for the current browser session and reset on reload. **New game** also resets them.
@@ -19,5 +19,7 @@ The score and board state live in memory for the current browser session and res
 ## Design notes
 
 The interface uses a saturated blue board, white category and clue text, and yellow-orange values. Bree Serif is used as an accessible web-font approximation for the distinctive clue lettering; Oswald supplies the condensed board typography. If Google Fonts is unavailable, local serif and sans-serif fallbacks are used.
+
+Scoring is intentionally simplified for this host-led prototype: a team can receive the clue value once, after the response is revealed. Incorrect responses do not subtract points here. On the TV show, an incorrect response normally loses the clue value and another contestant may try.
 
 All 30 clues and responses are original starter content for this prototype.
