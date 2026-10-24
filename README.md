@@ -24,6 +24,6 @@ Scoring is intentionally simplified for this host-led prototype: a team can rece
 
 ## Clue sound
 
-“Tension Theme” and a loopable ticking clock play together while a clue is open, then stop when the response is revealed. Use **Sound on/off** in the header to control both. Both tracks are marked CC0 1.0 on their source pages; CC0 does not require attribution. Sources are recorded in `assets/README.md` for provenance. Both audio files are bundled locally, so playback does not depend on an external music host.
+“Tension Theme” and a loopable ticking clock play together while a clue is open, then stop when the response is revealed. Use **Sound on/off** in the header to control both. Both tracks are marked CC0 1.0 on their source pages; CC0 does not require attribution. Sources and the clock-loop timing adjustment are recorded in `assets/README.md` for provenance. Both audio files are bundled locally, so playback does not depend on an external music host.
 
 All 30 clues and responses are original starter content for this prototype.
