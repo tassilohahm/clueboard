@@ -65,6 +65,7 @@ let players = [];
 let scores = [];
 let selectedPlayerCount = 2;
 const usedClues = new Set();
+const clueLimit = 20;
 const scoreStrip = document.querySelector("#score-strip");
 const stage = document.querySelector("#game-stage");
 const newGameButton = document.querySelector("#new-game");
@@ -125,7 +126,7 @@ function renderSetup() {
       <div class="setup-card">
         <p class="setup-kicker">ROUND ONE</p>
         <h1 id="setup-title">How many players are playing?</h1>
-        <p class="setup-copy">Choose between two and four players to set up the score board.</p>
+        <p class="setup-copy">Choose between two and four players. The game ends after 20 clues.</p>
         <div class="player-count-options" role="group" aria-label="Number of players">
           ${[2, 3, 4].map((count) => `
             <button class="player-count-option${count === selectedPlayerCount ? " selected" : ""}" type="button" data-player-count="${count}" aria-pressed="${count === selectedPlayerCount}">
@@ -167,19 +168,15 @@ function renderBoard() {
   scoredFor = null;
   renderScores();
 
-  const allPlayed = usedClues.size === gameData.length * 5;
-  const leaders = scores
-    .map((score, index) => ({ score, player: players[index] }))
-    .filter((entry) => entry.score === Math.max(...scores))
-    .map((entry) => entry.player);
-  const completion = allPlayed
-    ? `<div class="completion-banner" role="status">Round complete · ${leaders.join(" and ")} ${leaders.length === 1 ? "leads" : "are tied"} at ${money(Math.max(...scores))}</div>`
-    : "";
+  if (usedClues.size >= clueLimit) {
+    renderFinalScores();
+    return;
+  }
 
   stage.innerHTML = `
     <div class="stage-heading">
       <h1>PICK A CATEGORY AND VALUE</h1>
-      <p>${30 - usedClues.size} clues remaining</p>
+      <p>${clueLimit - usedClues.size} clues until final scores</p>
     </div>
     <section class="board" aria-label="Round one clue board">
       ${gameData.map((column, categoryIndex) => `
@@ -195,7 +192,6 @@ function renderBoard() {
         </div>
       `).join("")}
     </section>
-    ${completion}
   `;
 
   stage.querySelectorAll(".clue-tile:not(.used)").forEach((tile) => {
@@ -212,6 +208,29 @@ function renderBoard() {
       renderClue();
     });
   });
+}
+
+function renderFinalScores() {
+  const highestScore = Math.max(...scores);
+  const winners = players.filter((_, index) => scores[index] === highestScore);
+  const standings = players
+    .map((player, index) => ({ player, score: scores[index] }))
+    .sort((a, b) => b.score - a.score);
+
+  stage.innerHTML = `
+    <section class="final-screen" aria-labelledby="final-title">
+      <div class="final-card">
+        <p class="setup-kicker">${usedClues.size} CLUES PLAYED</p>
+        <h1 id="final-title">Game complete</h1>
+        <p class="final-winner">${winners.length === 1 ? `${winners[0]} wins` : `${winners.join(" and ")} tie for the win`}</p>
+        <ol class="final-standings" aria-label="Final scores">
+          ${standings.map(({ player, score }, index) => `
+            <li><span><span class="final-rank">${index + 1}</span>${player}</span><strong>${money(score)}</strong></li>
+          `).join("")}
+        </ol>
+      </div>
+    </section>
+  `;
 }
 
 function renderClue() {
