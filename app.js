@@ -69,7 +69,6 @@ const stage = document.querySelector("#game-stage");
 const newGameButton = document.querySelector("#new-game");
 const soundToggle = document.querySelector("#sound-toggle");
 const tickingAudio = document.querySelector("#ticking-audio");
-const themeAudio = document.querySelector("#theme-audio");
 
 let activeClue = null;
 let answerRevealed = false;
@@ -78,21 +77,16 @@ let previousTile = null;
 let soundEnabled = true;
 
 tickingAudio.volume = 0.22;
-themeAudio.volume = 0.13;
 
 function startClueAudio() {
   if (!soundEnabled) return;
-  [tickingAudio, themeAudio].forEach((audio) => {
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  });
+  tickingAudio.currentTime = 0;
+  tickingAudio.play().catch(() => {});
 }
 
 function stopClueAudio() {
-  [tickingAudio, themeAudio].forEach((audio) => {
-    audio.pause();
-    audio.currentTime = 0;
-  });
+  tickingAudio.pause();
+  tickingAudio.currentTime = 0;
 }
 
 function updateSoundToggle() {
