@@ -326,8 +326,11 @@ function renderClue() {
   });
   stage.querySelector(".incorrect-response")?.addEventListener("click", () => {
     if (buzzedPlayer === null) return;
-    lockedOutPlayers.add(buzzedPlayer);
+    const incorrectPlayer = buzzedPlayer;
+    scores[incorrectPlayer] -= activeClue.value;
+    lockedOutPlayers.add(incorrectPlayer);
     buzzedPlayer = null;
+    renderScores();
     renderClue();
     stage.querySelector(".reveal-answer-button")?.focus();
   });
