@@ -133,22 +133,7 @@ button { font: inherit; }
   text-shadow: 0 2px 8px rgba(255, 192, 44, .18);
 }
 
-.score-adjustments { display: flex; gap: 6px; }
-.score-adjustments[hidden] { display: none; }
-.score-adjust {
-  min-width: 47px;
-  border: 1px solid rgba(200, 214, 255, .3);
-  border-radius: 6px;
-  padding: 7px 8px;
-  color: #f4f6ff;
-  background: rgba(2, 10, 54, .48);
-  font-family: var(--font-board);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.score-adjust:hover { color: var(--gold-light); border-color: var(--gold); }
-.score-adjust:focus-visible, button:focus-visible, a:focus-visible {
+button:focus-visible, a:focus-visible {
   outline: 3px solid var(--gold-light);
   outline-offset: 3px;
 }
@@ -313,6 +298,40 @@ button { font: inherit; }
 }
 .answer-text[hidden] { display: none; }
 
+.score-decision { width: min(940px, 100%); margin-top: 23px; }
+.score-question {
+  margin: 0 0 11px;
+  color: #dce5ff;
+  font-family: var(--font-board);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.score-awards { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
+.score-award {
+  border: 1px solid rgba(255, 201, 74, .65);
+  border-radius: 7px;
+  padding: 10px 14px;
+  color: var(--gold-light);
+  background: rgba(4, 15, 70, .58);
+  font-family: var(--font-board);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+.score-award:hover { transform: translateY(-1px); border-color: var(--gold-light); background: rgba(24, 46, 127, .88); }
+.score-help { margin: 9px 0 0; color: #b9c7f0; font-size: 12px; }
+.score-confirmation {
+  margin: 0;
+  color: var(--gold-light);
+  font-family: var(--font-board);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
 .primary-action {
   min-width: 176px;
   margin-top: 36px;
@@ -367,8 +386,8 @@ button { font: inherit; }
   .score-card { min-height: 57px; display: block; padding: 7px 8px; text-align: center; }
   .score-name { font-size: 11px; }
   .score-value { font-size: 23px; }
-  .score-adjustments { justify-content: center; margin-top: 6px; }
-  .score-adjust { min-width: 0; padding: 4px 6px; font-size: 11px; }
+  .score-awards { gap: 7px; }
+  .score-award { flex: 1 1 42%; padding: 9px 8px; font-size: 12px; }
   .stage-heading h1 { font-size: 13px; }
   .stage-heading p { font-size: 10px; }
   .board { min-height: 0; grid-template-columns: repeat(6, minmax(112px, 1fr)); gap: 4px; padding: 5px; }
