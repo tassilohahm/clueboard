@@ -68,7 +68,8 @@ const scoreStrip = document.querySelector("#score-strip");
 const stage = document.querySelector("#game-stage");
 const newGameButton = document.querySelector("#new-game");
 const soundToggle = document.querySelector("#sound-toggle");
-const thinkingAudio = document.querySelector("#thinking-audio");
+const tickingAudio = document.querySelector("#ticking-audio");
+const themeAudio = document.querySelector("#theme-audio");
 
 let activeClue = null;
 let answerRevealed = false;
@@ -76,17 +77,22 @@ let scoredFor = null;
 let previousTile = null;
 let soundEnabled = true;
 
-thinkingAudio.volume = 0.22;
+tickingAudio.volume = 0.22;
+themeAudio.volume = 0.13;
 
-function playThinkingSound() {
+function startClueAudio() {
   if (!soundEnabled) return;
-  thinkingAudio.currentTime = 0;
-  thinkingAudio.play().catch(() => {});
+  [tickingAudio, themeAudio].forEach((audio) => {
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  });
 }
 
-function stopThinkingSound() {
-  thinkingAudio.pause();
-  thinkingAudio.currentTime = 0;
+function stopClueAudio() {
+  [tickingAudio, themeAudio].forEach((audio) => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
 }
 
 function updateSoundToggle() {
@@ -109,7 +115,7 @@ function renderScores() {
 }
 
 function renderBoard() {
-  stopThinkingSound();
+  stopClueAudio();
   activeClue = null;
   answerRevealed = false;
   scoredFor = null;
@@ -156,7 +162,7 @@ function renderBoard() {
         id: tile.dataset.clue,
       };
       scoredFor = null;
-      playThinkingSound();
+      startClueAudio();
       renderClue();
     });
   });
@@ -201,7 +207,7 @@ function renderClue() {
   });
   stage.querySelector(".primary-action").addEventListener("click", () => {
     if (!answerRevealed) {
-      stopThinkingSound();
+      stopClueAudio();
       answerRevealed = true;
       renderClue();
       stage.querySelector(".primary-action").focus();
@@ -214,7 +220,7 @@ function renderClue() {
 }
 
 function closeClue() {
-  stopThinkingSound();
+  stopClueAudio();
   if (scoredFor !== null) usedClues.add(activeClue.id);
   renderBoard();
   previousTile?.focus();
@@ -223,8 +229,8 @@ function closeClue() {
 soundToggle.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   updateSoundToggle();
-  if (activeClue && !answerRevealed && soundEnabled) playThinkingSound();
-  else stopThinkingSound();
+  if (activeClue && !answerRevealed && soundEnabled) startClueAudio();
+  else stopClueAudio();
 });
 
 newGameButton.addEventListener("click", () => {
