@@ -61,8 +61,9 @@ const gameData = [
   },
 ];
 
-const players = ["Team 1", "Team 2", "Team 3"];
-const scores = [0, 0, 0];
+let players = [];
+let scores = [];
+let selectedPlayerCount = 2;
 const usedClues = new Set();
 const scoreStrip = document.querySelector("#score-strip");
 const stage = document.querySelector("#game-stage");
@@ -98,6 +99,8 @@ function updateSoundToggle() {
 const money = (amount) => `$${amount.toLocaleString("en-US")}`;
 
 function renderScores() {
+  scoreStrip.style.display = "grid";
+  scoreStrip.style.gridTemplateColumns = `repeat(${players.length}, minmax(0, 1fr))`;
   scoreStrip.innerHTML = players.map((player, index) => `
     <div class="score-card">
       <div class="score-person">
@@ -108,7 +111,56 @@ function renderScores() {
   `).join("");
 }
 
+function renderSetup() {
+  stopClueAudio();
+  activeClue = null;
+  answerRevealed = false;
+  scoredFor = null;
+  scoreStrip.innerHTML = "";
+  scoreStrip.style.display = "none";
+  newGameButton.hidden = true;
+
+  stage.innerHTML = `
+    <section class="setup-screen" aria-labelledby="setup-title">
+      <div class="setup-card">
+        <p class="setup-kicker">ROUND ONE</p>
+        <h1 id="setup-title">How many teams are playing?</h1>
+        <p class="setup-copy">Choose between two and four teams to set up the score board.</p>
+        <div class="player-count-options" role="group" aria-label="Number of teams">
+          ${[2, 3, 4].map((count) => `
+            <button class="player-count-option${count === selectedPlayerCount ? " selected" : ""}" type="button" data-player-count="${count}" aria-pressed="${count === selectedPlayerCount}">
+              <strong>${count}</strong>
+              <span>${count === 1 ? "team" : "teams"}</span>
+            </button>
+          `).join("")}
+        </div>
+        <button class="primary-action start-round" type="button">Start Round</button>
+      </div>
+    </section>
+  `;
+
+  stage.querySelectorAll(".player-count-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedPlayerCount = Number(button.dataset.playerCount);
+      stage.querySelectorAll(".player-count-option").forEach((option) => {
+        const isSelected = option === button;
+        option.classList.toggle("selected", isSelected);
+        option.setAttribute("aria-pressed", String(isSelected));
+      });
+    });
+  });
+
+  stage.querySelector(".start-round").addEventListener("click", () => {
+    players = Array.from({ length: selectedPlayerCount }, (_, index) => `Team ${index + 1}`);
+    scores = Array(players.length).fill(0);
+    usedClues.clear();
+    newGameButton.hidden = false;
+    renderBoard();
+  });
+}
+
 function renderBoard() {
+  newGameButton.hidden = false;
   stopClueAudio();
   activeClue = null;
   answerRevealed = false;
@@ -229,14 +281,13 @@ soundToggle.addEventListener("click", () => {
 
 newGameButton.addEventListener("click", () => {
   if (!window.confirm("Start a new round? Scores and used clues will reset.")) return;
-  scores.fill(0);
-  usedClues.clear();
-  renderBoard();
+  selectedPlayerCount = players.length || selectedPlayerCount;
+  renderSetup();
 });
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && activeClue) closeClue();
 });
 
-renderBoard();
+renderSetup();
 updateSoundToggle();
