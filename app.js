@@ -66,6 +66,11 @@ let scores = [];
 let selectedPlayerCount = 2;
 const usedClues = new Set();
 const clueLimit = 20;
+const buzzerKeys = {
+  2: ["Q", "P"],
+  3: ["Q", "B", "P"],
+  4: ["Q", "X", "N", "P"],
+};
 const scoreStrip = document.querySelector("#score-strip");
 const stage = document.querySelector("#game-stage");
 const newGameButton = document.querySelector("#new-game");
@@ -249,13 +254,21 @@ function renderFinalScores() {
 
 function renderClue() {
   renderScores();
-  const availablePlayers = players
-    .map((player, index) => ({ player, index }))
-    .filter(({ index }) => !lockedOutPlayers.has(index));
+  const keyboardLegend = `
+    <div class="keyboard-buzzers" aria-label="Player buzzer keys">
+      ${players.map((player, index) => `
+        <div class="keyboard-buzzer${lockedOutPlayers.has(index) ? " locked-out" : ""}"${lockedOutPlayers.has(index) ? ' aria-label="' + player + ', locked out for this clue"' : ""}>
+          <kbd>${buzzerKeys[players.length][index]}</kbd><span>${player}</span>
+          ${lockedOutPlayers.has(index) ? `<small>Locked out</small>` : ""}
+        </div>
+      `).join("")}
+    </div>
+  `;
   const buzzerControls = !answerRevealed
     ? buzzedPlayer !== null
       ? `
-        <p class="buzzer-status">${players[buzzedPlayer]} buzzed in. Did they get it?</p>
+        <p class="buzzer-status">${players[buzzedPlayer]} buzzed in with ${buzzerKeys[players.length][buzzedPlayer]}. Did they get it?</p>
+        ${keyboardLegend}
         <div class="host-rulings">
           <button class="ruling-button correct-response" type="button">Correct</button>
           <button class="ruling-button incorrect-response" type="button">Incorrect</button>
@@ -264,15 +277,12 @@ function renderClue() {
       : !buzzersOpen
         ? `
           <p class="buzzer-status">Read the clue aloud, then open the buzzers.</p>
+          ${keyboardLegend}
           <button class="ruling-button open-buzzers" type="button">Open Buzzers</button>
         `
         : `
-          <p class="buzzer-status">Buzzers are open${lockedOutPlayers.size ? ". Players who already missed this clue are locked out." : "."}</p>
-          ${availablePlayers.length ? `
-            <div class="player-buzzers">
-              ${availablePlayers.map(({ player, index }) => `<button class="buzzer-button" type="button" data-buzzer-player="${index}">Buzz in · ${player}</button>`).join("")}
-            </div>
-          ` : `<p class="buzzer-status">No players left to try.</p>`}
+          <p class="buzzer-status">${lockedOutPlayers.size === players.length ? "No players left to try." : "Press your assigned key to buzz in."}</p>
+          ${keyboardLegend}
           <button class="reveal-answer-button" type="button">No correct response · Show Answer</button>
         `
     : "";
@@ -302,17 +312,8 @@ function renderClue() {
   stage.querySelector(".close-clue").addEventListener("click", closeClue);
   stage.querySelector(".open-buzzers")?.addEventListener("click", () => {
     buzzersOpen = true;
-    stage.querySelectorAll(".buzzer-button").forEach((button) => { button.disabled = false; });
     renderClue();
-    stage.querySelector(".buzzer-button")?.focus();
-  });
-  stage.querySelectorAll(".buzzer-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (!buzzersOpen || buzzedPlayer !== null) return;
-      buzzedPlayer = Number(button.dataset.buzzerPlayer);
-      renderClue();
-      stage.querySelector(".correct-response").focus();
-    });
+    stage.focus();
   });
   stage.querySelector(".correct-response")?.addEventListener("click", () => {
     if (buzzedPlayer === null) return;
@@ -330,7 +331,7 @@ function renderClue() {
     lockedOutPlayers.add(buzzedPlayer);
     buzzedPlayer = null;
     renderClue();
-    stage.querySelector(".buzzer-button")?.focus();
+    stage.querySelector(".reveal-answer-button")?.focus();
   });
   stage.querySelector(".reveal-answer-button")?.addEventListener("click", () => {
     answerRevealed = true;
@@ -375,7 +376,20 @@ newGameButton.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && activeClue) closeClue();
+  if (event.key === "Escape" && activeClue) {
+    closeClue();
+    return;
+  }
+  if (!activeClue || answerRevealed || !buzzersOpen || buzzedPlayer !== null || event.repeat) return;
+
+  const pressedKey = event.key.toUpperCase();
+  const playerIndex = buzzerKeys[players.length]?.indexOf(pressedKey) ?? -1;
+  if (playerIndex < 0 || lockedOutPlayers.has(playerIndex)) return;
+
+  event.preventDefault();
+  buzzedPlayer = playerIndex;
+  renderClue();
+  stage.querySelector(".correct-response").focus();
 });
 
 renderSetup();

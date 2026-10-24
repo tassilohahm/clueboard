@@ -415,8 +415,14 @@ button:focus-visible, a:focus-visible {
 
 .buzzer-controls { width: min(940px, 100%); margin-top: 24px; }
 .buzzer-status { margin: 0 0 12px; color: #dce5ff; font-size: 14px; }
-.player-buzzers, .host-rulings { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
-.buzzer-button, .ruling-button, .reveal-answer-button {
+.keyboard-buzzers { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin: 15px 0; }
+.keyboard-buzzer { min-width: 104px; display: grid; grid-template-columns: auto 1fr; align-items: center; justify-items: start; column-gap: 10px; row-gap: 2px; padding: 8px 11px; border: 1px solid rgba(148, 173, 255, .42); border-radius: 7px; background: rgba(4, 15, 70, .52); color: #eaf0ff; }
+.keyboard-buzzer kbd { grid-row: span 2; min-width: 35px; padding: 4px 7px; border: 1px solid rgba(255, 225, 138, .72); border-radius: 5px; color: var(--gold-light); background: rgba(20, 43, 124, .92); font: 700 18px var(--font-board); text-align: center; box-shadow: 0 2px 0 rgba(0, 0, 0, .32); }
+.keyboard-buzzer span { font-family: var(--font-board); font-size: 13px; font-weight: 600; }
+.keyboard-buzzer small { color: #aab9ed; font-size: 10px; }
+.keyboard-buzzer.locked-out { opacity: .48; }
+.host-rulings { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
+.ruling-button, .reveal-answer-button {
   border: 1px solid rgba(255, 201, 74, .65);
   border-radius: 7px;
   padding: 11px 16px;
@@ -426,10 +432,9 @@ button:focus-visible, a:focus-visible {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background .14s ease, border-color .14s ease, transform .14s ease, opacity .14s ease;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
 }
-.buzzer-button:hover:not(:disabled), .ruling-button:hover, .reveal-answer-button:hover { transform: translateY(-1px); border-color: var(--gold-light); background: rgba(24, 46, 127, .9); }
-.buzzer-button:disabled { opacity: .45; cursor: not-allowed; }
+.ruling-button:hover, .reveal-answer-button:hover { transform: translateY(-1px); border-color: var(--gold-light); background: rgba(24, 46, 127, .9); }
 .correct-response { border-color: rgba(139, 232, 185, .72); color: #bff5d6; }
 .incorrect-response { border-color: rgba(255, 150, 150, .65); color: #ffd0d0; }
 .reveal-answer-button { margin-top: 13px; padding: 8px 12px; font-size: 12px; }
@@ -529,8 +534,10 @@ button:focus-visible, a:focus-visible {
   .score-name { font-size: 11px; }
   .score-value { font-size: 23px; }
   .score-awards { gap: 7px; }
-  .player-buzzers, .host-rulings { display: grid; grid-template-columns: 1fr 1fr; }
-  .buzzer-button, .ruling-button { padding: 10px 8px; font-size: 12px; }
+  .keyboard-buzzers { display: grid; grid-template-columns: 1fr 1fr; }
+  .keyboard-buzzer { min-width: 0; }
+  .host-rulings { display: grid; grid-template-columns: 1fr 1fr; }
+  .ruling-button { padding: 10px 8px; font-size: 12px; }
   .score-award { flex: 1 1 42%; padding: 9px 8px; font-size: 12px; }
   .stage-heading h1 { font-size: 13px; }
   .stage-heading p { font-size: 10px; }
