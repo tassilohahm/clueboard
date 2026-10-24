@@ -75,6 +75,11 @@ const tickingAudio = document.querySelector("#ticking-audio");
 let activeClue = null;
 let answerRevealed = false;
 let scoredFor = null;
+let correctPlayer = null;
+let boardChooser = 0;
+let buzzersOpen = false;
+let buzzedPlayer = null;
+const lockedOutPlayers = new Set();
 let previousTile = null;
 let soundEnabled = true;
 
@@ -117,6 +122,10 @@ function renderSetup() {
   activeClue = null;
   answerRevealed = false;
   scoredFor = null;
+  correctPlayer = null;
+  buzzersOpen = false;
+  buzzedPlayer = null;
+  lockedOutPlayers.clear();
   scoreStrip.innerHTML = "";
   scoreStrip.style.display = "none";
   newGameButton.hidden = true;
@@ -155,6 +164,7 @@ function renderSetup() {
     players = Array.from({ length: selectedPlayerCount }, (_, index) => `Player ${index + 1}`);
     scores = Array(players.length).fill(0);
     usedClues.clear();
+    boardChooser = 0;
     newGameButton.hidden = false;
     renderBoard();
   });
@@ -175,7 +185,7 @@ function renderBoard() {
 
   stage.innerHTML = `
     <div class="stage-heading">
-      <h1>PICK A CATEGORY AND VALUE</h1>
+      <h1>${players[boardChooser].toUpperCase()}, CHOOSE A CLUE</h1>
       <p>${clueLimit - usedClues.size} clues until final scores</p>
     </div>
     <section class="board" aria-label="Round one clue board">
@@ -204,6 +214,10 @@ function renderBoard() {
         id: tile.dataset.clue,
       };
       scoredFor = null;
+      correctPlayer = null;
+      buzzersOpen = false;
+      buzzedPlayer = null;
+      lockedOutPlayers.clear();
       startClueAudio();
       renderClue();
     });
@@ -235,6 +249,34 @@ function renderFinalScores() {
 
 function renderClue() {
   renderScores();
+  const availablePlayers = players
+    .map((player, index) => ({ player, index }))
+    .filter(({ index }) => !lockedOutPlayers.has(index));
+  const buzzerControls = !answerRevealed
+    ? buzzedPlayer !== null
+      ? `
+        <p class="buzzer-status">${players[buzzedPlayer]} buzzed in. Did they get it?</p>
+        <div class="host-rulings">
+          <button class="ruling-button correct-response" type="button">Correct</button>
+          <button class="ruling-button incorrect-response" type="button">Incorrect</button>
+        </div>
+      `
+      : !buzzersOpen
+        ? `
+          <p class="buzzer-status">Read the clue aloud, then open the buzzers.</p>
+          <button class="ruling-button open-buzzers" type="button">Open Buzzers</button>
+        `
+        : `
+          <p class="buzzer-status">Buzzers are open${lockedOutPlayers.size ? ". Players who already missed this clue are locked out." : "."}</p>
+          ${availablePlayers.length ? `
+            <div class="player-buzzers">
+              ${availablePlayers.map(({ player, index }) => `<button class="buzzer-button" type="button" data-buzzer-player="${index}">Buzz in · ${player}</button>`).join("")}
+            </div>
+          ` : `<p class="buzzer-status">No players left to try.</p>`}
+          <button class="reveal-answer-button" type="button">No correct response · Show Answer</button>
+        `
+    : "";
+
   stage.innerHTML = `
     <section class="clue-screen" aria-label="Selected clue">
       <div class="clue-panel">
@@ -242,51 +284,79 @@ function renderClue() {
         <p class="clue-meta">${activeClue.category} <span aria-hidden="true">·</span> ${money(activeClue.value)}</p>
         <p class="clue-text">${activeClue.clue}</p>
         <p class="answer-text" ${answerRevealed ? "" : "hidden"}>${activeClue.response}</p>
-        ${answerRevealed ? `
+        ${!answerRevealed ? `<section class="buzzer-controls" aria-live="polite">${buzzerControls}</section>` : `
           <section class="score-decision" aria-live="polite">
-            ${scoredFor === null ? `
-              <p class="score-question">Who got it?</p>
+            ${correctPlayer !== null ? scoredFor === null ? `
+              <p class="score-question">Award the points?</p>
               <div class="score-awards">
-                ${players.map((player, index) => `<button class="score-award" type="button" data-player="${index}">Award ${money(activeClue.value)} to ${player}</button>`).join("")}
+                <button class="score-award" type="button">Award ${money(activeClue.value)} to ${players[correctPlayer]}</button>
               </div>
-              <p class="score-help">If no one got it, continue without awarding points.</p>
-            ` : `<p class="score-confirmation">${players[scoredFor]} earned ${money(activeClue.value)}.</p>`}
+            ` : `<p class="score-confirmation">${players[scoredFor]} earned ${money(activeClue.value)}.</p>` : `<p class="score-help">No points awarded for this clue.</p>`}
           </section>
-        ` : ""}
-        <button class="primary-action" type="button">${answerRevealed ? "Continue" : "Show Answer"}</button>
+        `}
+        ${answerRevealed ? `<button class="primary-action" type="button">Continue</button>` : ""}
       </div>
     </section>
   `;
 
   stage.querySelector(".close-clue").addEventListener("click", closeClue);
-  stage.querySelectorAll(".score-award").forEach((button) => {
+  stage.querySelector(".open-buzzers")?.addEventListener("click", () => {
+    buzzersOpen = true;
+    stage.querySelectorAll(".buzzer-button").forEach((button) => { button.disabled = false; });
+    renderClue();
+    stage.querySelector(".buzzer-button")?.focus();
+  });
+  stage.querySelectorAll(".buzzer-button").forEach((button) => {
     button.addEventListener("click", () => {
-      if (scoredFor !== null) return;
-      scoredFor = Number(button.dataset.player);
-      scores[scoredFor] += activeClue.value;
-      usedClues.add(activeClue.id);
-      renderScores();
+      if (!buzzersOpen || buzzedPlayer !== null) return;
+      buzzedPlayer = Number(button.dataset.buzzerPlayer);
       renderClue();
-      stage.querySelector(".primary-action").focus();
+      stage.querySelector(".correct-response").focus();
     });
   });
-  stage.querySelector(".primary-action").addEventListener("click", () => {
-    if (!answerRevealed) {
-      stopClueAudio();
-      answerRevealed = true;
-      renderClue();
-      stage.querySelector(".primary-action").focus();
-      return;
-    }
+  stage.querySelector(".correct-response")?.addEventListener("click", () => {
+    if (buzzedPlayer === null) return;
+    correctPlayer = buzzedPlayer;
+    boardChooser = correctPlayer;
+    usedClues.add(activeClue.id);
+    answerRevealed = true;
+    buzzedPlayer = null;
+    stopClueAudio();
+    renderClue();
+    stage.querySelector(".score-award")?.focus();
+  });
+  stage.querySelector(".incorrect-response")?.addEventListener("click", () => {
+    if (buzzedPlayer === null) return;
+    lockedOutPlayers.add(buzzedPlayer);
+    buzzedPlayer = null;
+    renderClue();
+    stage.querySelector(".buzzer-button")?.focus();
+  });
+  stage.querySelector(".reveal-answer-button")?.addEventListener("click", () => {
+    answerRevealed = true;
+    usedClues.add(activeClue.id);
+    stopClueAudio();
+    renderClue();
+    stage.querySelector(".primary-action").focus();
+  });
+  stage.querySelector(".score-award")?.addEventListener("click", () => {
+    if (scoredFor !== null || correctPlayer === null) return;
+    scoredFor = correctPlayer;
+    scores[scoredFor] += activeClue.value;
+    renderScores();
+    renderClue();
+    stage.querySelector(".primary-action").focus();
+  });
+  stage.querySelector(".primary-action")?.addEventListener("click", () => {
     usedClues.add(activeClue.id);
     renderBoard();
-    previousTile?.focus();
+    if (usedClues.size < clueLimit) previousTile?.focus();
   });
 }
 
 function closeClue() {
   stopClueAudio();
-  if (scoredFor !== null) usedClues.add(activeClue.id);
+  if (correctPlayer !== null || answerRevealed) usedClues.add(activeClue.id);
   renderBoard();
   previousTile?.focus();
 }
