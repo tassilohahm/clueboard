@@ -296,12 +296,7 @@ function renderClue() {
         <p class="answer-text" ${answerRevealed ? "" : "hidden"}>${activeClue.response}</p>
         ${!answerRevealed ? `<section class="buzzer-controls" aria-live="polite">${buzzerControls}</section>` : `
           <section class="score-decision" aria-live="polite">
-            ${correctPlayer !== null ? scoredFor === null ? `
-              <p class="score-question">Award the points?</p>
-              <div class="score-awards">
-                <button class="score-award" type="button">Award ${money(activeClue.value)} to ${players[correctPlayer]}</button>
-              </div>
-            ` : `<p class="score-confirmation">${players[scoredFor]} earned ${money(activeClue.value)}.</p>` : `<p class="score-help">No points awarded for this clue.</p>`}
+            ${correctPlayer !== null ? `<p class="score-confirmation">${players[correctPlayer]} earned ${money(activeClue.value)}.</p>` : `<p class="score-help">No points awarded for this clue.</p>`}
           </section>
         `}
         ${answerRevealed ? `<button class="primary-action" type="button">Continue</button>` : ""}
@@ -319,12 +314,15 @@ function renderClue() {
     if (buzzedPlayer === null) return;
     correctPlayer = buzzedPlayer;
     boardChooser = correctPlayer;
+    scoredFor = correctPlayer;
+    scores[correctPlayer] += activeClue.value;
     usedClues.add(activeClue.id);
     answerRevealed = true;
     buzzedPlayer = null;
     stopClueAudio();
+    renderScores();
     renderClue();
-    stage.querySelector(".score-award")?.focus();
+    stage.querySelector(".primary-action").focus();
   });
   stage.querySelector(".incorrect-response")?.addEventListener("click", () => {
     if (buzzedPlayer === null) return;
@@ -337,14 +335,6 @@ function renderClue() {
     answerRevealed = true;
     usedClues.add(activeClue.id);
     stopClueAudio();
-    renderClue();
-    stage.querySelector(".primary-action").focus();
-  });
-  stage.querySelector(".score-award")?.addEventListener("click", () => {
-    if (scoredFor !== null || correctPlayer === null) return;
-    scoredFor = correctPlayer;
-    scores[scoredFor] += activeClue.value;
-    renderScores();
     renderClue();
     stage.querySelector(".primary-action").focus();
   });
